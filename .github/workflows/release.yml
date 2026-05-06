@@ -17,7 +17,7 @@ jobs:
     env:
       DALAMUD_HOME: ${{ github.workspace }}\dalamud
       PROJECT_PATH: WondrousTailsSolver\WondrousTailsSolver.csproj
-      PACKAGE_DIR: WondrousTailsSolver\bin\x64\Release\WondrousTailsSolver
+      PACKAGE_DIR: WondrousTailsSolver\bin\Release\WondrousTailsSolver
       PACKAGE_NAME: WondrousTailsSolver
     steps:
       - name: Checkout
@@ -45,6 +45,13 @@ jobs:
 
       - name: Build
         run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore
+
+      - name: List release outputs
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse -Force "WondrousTailsSolver\bin\Release" |
+            Select-Object FullName, Length |
+            Format-Table -AutoSize
 
       - name: Verify release assets
         shell: pwsh
