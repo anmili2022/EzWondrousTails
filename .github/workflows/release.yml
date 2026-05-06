@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      DALAMUD_HOME: ${{ github.workspace }}\dalamud
+      PROJECT_PATH: WondrousTailsSolver\WondrousTailsSolver.csproj
+      PACKAGE_DIR: WondrousTailsSolver\bin\x64\Release\WondrousTailsSolver
+      PACKAGE_NAME: WondrousTailsSolver
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore Dalamud runtime files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "$env:DALAMUD_HOME" | Out-Null
+          Invoke-WebRequest `
+            -Uri "https://goatcorp.github.io/dalamud-distrib/stg/latest.zip" `
+            -OutFile "$env:RUNNER_TEMP\dalamud.zip"
+          Expand-Archive `
+            -Path "$env:RUNNER_TEMP\dalamud.zip" `
+            -DestinationPath "$env:DALAMUD_HOME" `
+            -Force
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore
+
+      - name: Verify release assets
+        shell: pwsh
+        run: |
+          $requiredFiles = @(
+            "${{ env.PACKAGE_DIR }}\latest.zip",
+            "${{ env.PACKAGE_DIR }}\${{ env.PACKAGE_NAME }}.json"
+          )
+          foreach ($file in $requiredFiles) {
+            if (-not (Test-Path $file)) {
+              throw "Missing release asset: $file"
+            }
+          }
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            ${{ env.PACKAGE_DIR }}\latest.zip
+            ${{ env.PACKAGE_DIR }}\${{ env.PACKAGE_NAME }}.json
