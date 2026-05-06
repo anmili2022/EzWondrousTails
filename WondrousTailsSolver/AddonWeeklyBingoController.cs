@@ -44,17 +44,8 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
             return;
         }
 
-        var currentAddon = GetOpenAddon();
-        if (currentAddon is not null) {
-            RestoreInstructionText(currentAddon);
-        }
-
         DalamudServices.AddonLifecycle.UnregisterListener(OnAddonEvent);
-
-        instructionTextNodeId = 0;
-        instructionOriginalText = null;
-        instructionOriginalHeight = 0;
-        instructionOriginalFlags = 0;
+        ClearInstructionState();
         disposed = true;
     }
 
@@ -67,7 +58,8 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
                 return;
 
             case AddonEvent.PreFinalize:
-                RestoreInstructionText(addon);
+                // Finalize callbacks are too late to safely mutate addon text nodes.
+                ClearInstructionState();
                 return;
 
             case AddonEvent.PostRefresh or AddonEvent.PostRequestedUpdate or AddonEvent.PostUpdate:
@@ -144,6 +136,13 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
         if (instructionOriginalFlags != 0) {
             instructionNode->TextFlags = instructionOriginalFlags;
         }
+    }
+
+    private void ClearInstructionState() {
+        instructionTextNodeId = 0;
+        instructionOriginalText = null;
+        instructionOriginalHeight = 0;
+        instructionOriginalFlags = 0;
     }
 
     private AtkTextNode* GetInstructionTextNode(AddonWeeklyBingo* addon) {
