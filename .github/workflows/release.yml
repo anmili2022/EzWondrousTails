@@ -17,7 +17,7 @@ jobs:
     env:
       DALAMUD_HOME: ${{ github.workspace }}\dalamud
       PROJECT_PATH: WondrousTailsSolver\WondrousTailsSolver.csproj
-      PACKAGE_DIR: WondrousTailsSolver\bin\Release\WondrousTailsSolver
+      PACKAGE_ROOT: WondrousTailsSolver\bin
       PACKAGE_NAME: WondrousTailsSolver
     steps:
       - name: Checkout
@@ -53,23 +53,28 @@ jobs:
             Select-Object FullName, Length |
             Format-Table -AutoSize
 
-      - name: Verify release assets
+      - name: Locate release assets
+        id: locate_assets
         shell: pwsh
         run: |
-          $requiredFiles = @(
-            "${{ env.PACKAGE_DIR }}\latest.zip",
-            "${{ env.PACKAGE_DIR }}\${{ env.PACKAGE_NAME }}.json"
-          )
-          foreach ($file in $requiredFiles) {
-            if (-not (Test-Path $file)) {
-              throw "Missing release asset: $file"
-            }
+          $assetDir = Get-ChildItem -Path "${{ env.PACKAGE_ROOT }}" -Recurse -Directory -Filter "${{ env.PACKAGE_NAME }}" |
+            Where-Object {
+              (Test-Path (Join-Path $_.FullName "latest.zip")) -and
+              (Test-Path (Join-Path $_.FullName "${{ env.PACKAGE_NAME }}.json"))
+            } |
+            Sort-Object FullName |
+            Select-Object -First 1
+
+          if (-not $assetDir) {
+            throw "Could not find packaged assets under ${{ env.PACKAGE_ROOT }}"
           }
+
+          "package_dir=$($assetDir.FullName)" >> $env:GITHUB_OUTPUT
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            ${{ env.PACKAGE_DIR }}\latest.zip
-            ${{ env.PACKAGE_DIR }}\${{ env.PACKAGE_NAME }}.json
+            ${{ steps.locate_assets.outputs.package_dir }}\latest.zip
+            ${{ steps.locate_assets.outputs.package_dir }}\${{ env.PACKAGE_NAME }}.json

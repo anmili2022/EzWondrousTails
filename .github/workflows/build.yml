@@ -2,19 +2,69 @@
 
 name: Build
 
-on: 
+on:
   workflow_dispatch:
   push:
     branches:
-    - master
+      - master
 
 jobs:
-  pull_request:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
+    env:
+      DALAMUD_HOME: ${{ github.workspace }}\dalamud
+      PROJECT_PATH: WondrousTailsSolver\WondrousTailsSolver.csproj
+      PACKAGE_ROOT: WondrousTailsSolver\bin
+      PACKAGE_NAME: WondrousTailsSolver
     steps:
-    - uses: daemitus/DalamudPluginPR2@master
-      with: 
-        token: ${{ secrets.PAT }}
-        plugin_name: WondrousTailsSolver
-        project_path: WondrousTailsSolver
-        plugin_owners: daemitus
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore Dalamud runtime files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "$env:DALAMUD_HOME" | Out-Null
+          Invoke-WebRequest `
+            -Uri "https://goatcorp.github.io/dalamud-distrib/stg/latest.zip" `
+            -OutFile "$env:RUNNER_TEMP\dalamud.zip"
+          Expand-Archive `
+            -Path "$env:RUNNER_TEMP\dalamud.zip" `
+            -DestinationPath "$env:DALAMUD_HOME" `
+            -Force
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore
+
+      - name: Locate build assets
+        id: locate_assets
+        shell: pwsh
+        run: |
+          $assetDir = Get-ChildItem -Path "${{ env.PACKAGE_ROOT }}" -Recurse -Directory -Filter "${{ env.PACKAGE_NAME }}" |
+            Where-Object {
+              (Test-Path (Join-Path $_.FullName "latest.zip")) -and
+              (Test-Path (Join-Path $_.FullName "${{ env.PACKAGE_NAME }}.json"))
+            } |
+            Sort-Object FullName |
+            Select-Object -First 1
+
+          if (-not $assetDir) {
+            throw "Could not find packaged assets under ${{ env.PACKAGE_ROOT }}"
+          }
+
+          "package_dir=$($assetDir.FullName)" >> $env:GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}-build
+          path: |
+            ${{ steps.locate_assets.outputs.package_dir }}\latest.zip
+            ${{ steps.locate_assets.outputs.package_dir }}\${{ env.PACKAGE_NAME }}.json
