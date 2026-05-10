@@ -42,6 +42,7 @@
 
 - `README.md`：项目简介与交接文档入口
 - `HANDOVER.md`：维护交接文档
+- `.github/workflows/build.yml`：GitHub Actions 构建工作流
 - `.github/workflows/release.yml`：GitHub Actions 发版工作流
 - `WondrousTailsSolver.sln`：解决方案
 - `WondrousTailsSolver/`：主插件项目
@@ -176,6 +177,14 @@ WondrousTailsSolver\output\WondrousTailsSolver.dll
 
 ## 7. 发版工作流
 
+除发版工作流外，仓库还有一个构建工作流：
+
+```text
+.github\workflows\build.yml
+```
+
+当前它会在 `main` 分支的 `push` 与 `pull_request` 上运行，用来尽早发现构建问题。
+
 工作流文件：
 
 ```text
@@ -306,8 +315,23 @@ git -c tag.gpgSign=false tag v3.2.2.11
 .git\info\exclude
 ```
 
-当前本机可能使用了本地排除规则忽略 `*.md`。  
-这是**本地 Git 配置**，不会自动同步到远程仓库。
+这类规则属于**本地 Git 配置**，不会自动同步到远程仓库。  
+本仓库这台机器上的 `*.md` 本地忽略规则已经在 2026-05-10 清理过；如果后续换机器或再次遇到同类问题，优先检查这里。
+
+### 9.3 文档编码与终端乱码
+
+仓库内的 `README.md` 与 `HANDOVER.md` 应按 **UTF-8** 维护。  
+如果你在某些 PowerShell / 终端里看到中文乱码，这通常是**终端编码显示问题**，不一定是文件内容损坏。
+
+建议优先用下面几种方式确认：
+
+- 直接在编辑器里打开文件
+- 在 GitHub 网页上查看渲染结果
+- 必要时用 Python 明确按 UTF-8 读取，例如：
+
+```powershell
+python -c "from pathlib import Path; print(Path('README.md').read_text(encoding='utf-8'))"
+```
 
 ## 10. 建议关注的后续方向
 
