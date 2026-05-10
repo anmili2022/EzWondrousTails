@@ -41,6 +41,17 @@ dotnet build .\WondrousTailsSolver.sln -c Release
 - Debug 输出目录 / Debug output: `WondrousTailsSolver\output\`
 - Release 产物目录 / Release output: `WondrousTailsSolver\bin\x64\Release\WondrousTailsSolver\`
 
+## Repository conventions / 仓库规范
+
+- 中文 Markdown 文档统一使用 `UTF-8 with BOM`
+  - Chinese Markdown files are kept in `UTF-8 with BOM`
+- 其余常见配置文件（如 `yml`、`json`、`csproj`、`sln`）保持普通 `UTF-8`
+  - Other common config files stay in plain `UTF-8`
+- 仓库文本文件默认使用 `LF`；只有 Windows 脚本（如 `ps1`、`bat`、`cmd`）保留 `CRLF`
+  - Text files default to `LF`; only Windows scripts keep `CRLF`
+- 具体规则见：`.editorconfig` 与 `.gitattributes`
+  - See `.editorconfig` and `.gitattributes` for the exact rules
+
 ## Maintenance / 维护
 
 - 维护交接文档 / Maintainer handover: [HANDOVER.md](HANDOVER.md)
