@@ -249,6 +249,30 @@ gh workflow run release.yml --repo anmili2022/EzWondrousTails -f tag=v3.2.2.11 -
 gh run list --repo anmili2022/EzWondrousTails --workflow release.yml --limit 5
 ```
 
+### 7.3 最近一次 dry-run 验证记录
+
+最近一次已确认成功的 release dry-run 验证信息如下：
+
+- 日期：**2026-05-10**
+- workflow：`Release`
+- 触发方式：`workflow_dispatch`
+- 验证目标 tag：`v3.2.2.11`
+- `dry_run`：`true`
+- Run ID：`25623253565`
+- 结果：`success`
+
+本次验证已确认：
+
+- release workflow 可以正常 checkout 指定 tag
+- 可以正常构建 `Release`
+- 可以正确定位：
+  - `latest.zip`
+  - `WondrousTailsSolver.json`
+- dry-run 模式下会**跳过** `Publish GitHub release`
+- 现有 `v3.2.2.11` Release 页面与资产未被改动
+
+如果后续再改 `release.yml`，建议优先重新跑一遍 dry-run，再进行正式发版。
+
 ### 工作流行为
 
 1. Checkout 指定 tag
