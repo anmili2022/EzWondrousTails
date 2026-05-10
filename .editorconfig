@@ -10,3 +10,11 @@ dotnet_diagnostic.CA1822.severity=silent
 [*.md]
 charset = utf-8-bom
 end_of_line = lf
+
+[*.{yml,yaml,json,csproj,sln}]
+charset = utf-8
+end_of_line = lf
+
+[.{gitignore,editorconfig}]
+charset = utf-8
+end_of_line = lf

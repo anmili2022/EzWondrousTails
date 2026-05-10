@@ -414,7 +414,23 @@ charset = utf-8-bom
 end_of_line = lf
 ```
 
-如果你后续编辑 Markdown，建议保留这个约束，不要再改回无 BOM UTF-8。  
+另外，其他常见配置/文本文件当前约定保持普通 **UTF-8（无 BOM）**，例如：
+
+- `*.yml`
+- `*.yaml`
+- `*.json`
+- `*.csproj`
+- `*.sln`
+- `.gitignore`
+- `.editorconfig`
+
+这样分开的原因是：
+
+- **Markdown**：优先照顾 Windows PowerShell `Get-Content` 直接阅读中文的体验，所以用 `utf-8-bom`
+- **配置文件 / 机器读取文件**：优先保持通用、简洁，继续用普通 `utf-8`
+
+如果你后续编辑 Markdown，建议保留这个约束，不要再改回无 BOM UTF-8；  
+如果是 workflow、json、csproj 这类配置文件，也不建议因为“看起来统一”就全部改成 BOM。
 如果你在某些 PowerShell / 终端里看到中文乱码，这通常是**终端编码显示问题**，不一定是文件内容损坏。
 
 建议优先用下面几种方式确认：
