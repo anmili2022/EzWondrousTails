@@ -9,6 +9,11 @@ on:
         description: Existing tag to release, for example v3.2.2.8
         required: true
         type: string
+      dry_run:
+        description: Build and validate release assets without publishing a GitHub Release
+        required: true
+        default: false
+        type: boolean
   push:
     tags:
       - "v*"
@@ -45,6 +50,14 @@ jobs:
           if (-not $tag.StartsWith("v")) {
             throw "Release tag must start with 'v'. Got: $tag"
           }
+
+      - name: Show release mode
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          $dryRun = "${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}"
+          Write-Host "Target tag: $tag"
+          Write-Host "Dry run: $dryRun"
 
       - name: Restore Dalamud runtime files
         shell: pwsh
@@ -90,6 +103,7 @@ jobs:
           "package_dir=$($assetDir.FullName)" >> $env:GITHUB_OUTPUT
 
       - name: Publish GitHub release
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
@@ -97,3 +111,9 @@ jobs:
           files: |
             ${{ steps.locate_assets.outputs.package_dir }}\latest.zip
             ${{ steps.locate_assets.outputs.package_dir }}\${{ env.PACKAGE_NAME }}.json
+
+      - name: Skip publish in dry run
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        shell: pwsh
+        run: |
+          Write-Host "Dry run enabled. Build and asset validation completed; GitHub Release publish step was skipped."

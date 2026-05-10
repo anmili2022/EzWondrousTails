@@ -219,6 +219,36 @@ windows-2025-vs2026
 1. 推送符合 `v*` 的 tag，例如 `v3.2.2.11`
 2. 或在 GitHub Actions 中手动触发 `workflow_dispatch`
 
+### 7.2 安全验证 release workflow（不发布）
+
+当前 `release.yml` 支持在手动触发时使用：
+
+- `tag`
+- `dry_run`
+
+其中：
+
+- `tag`：指定要验证的已有 tag
+- `dry_run = true`：只做 checkout、构建、产物定位与校验，**不会发布 GitHub Release**
+
+这适合在下面几种场景里使用：
+
+- 刚改过 `release.yml`，想先验证流程是否正常
+- 想确认打包产物路径、文件名、上传逻辑没有坏
+- 不想污染现有 Release 页面，也不想额外创建测试 Release
+
+命令行示例：
+
+```powershell
+gh workflow run release.yml --repo anmili2022/EzWondrousTails -f tag=v3.2.2.11 -f dry_run=true
+```
+
+运行后可以用下面命令查看最近的 release workflow：
+
+```powershell
+gh run list --repo anmili2022/EzWondrousTails --workflow release.yml --limit 5
+```
+
 ### 工作流行为
 
 1. Checkout 指定 tag
