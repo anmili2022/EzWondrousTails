@@ -67,7 +67,7 @@ jobs:
       - name: List release outputs
         shell: pwsh
         run: |
-          Get-ChildItem -Recurse -Force "WondrousTailsSolver\bin\Release" |
+          Get-ChildItem -Recurse -Force "${{ env.PACKAGE_ROOT }}" |
             Select-Object FullName, Length |
             Format-Table -AutoSize
 
