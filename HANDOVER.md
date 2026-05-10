@@ -429,6 +429,23 @@ end_of_line = lf
 - **Markdown**：优先照顾 Windows PowerShell `Get-Content` 直接阅读中文的体验，所以用 `utf-8-bom`
 - **配置文件 / 机器读取文件**：优先保持通用、简洁，继续用普通 `utf-8`
 
+此外，仓库根目录还增加了 `.gitattributes`，用于约束 **Git 的换行行为**。
+这一步和 `.editorconfig` 是互补的：
+
+- `.editorconfig`：主要约束编辑器保存文件时的编码与换行
+- `.gitattributes`：主要约束 Git 签出/提交时的文本归一化与工作区换行
+
+当前策略是：
+
+- 源码、Markdown、workflow、json、csproj、sln 等文本文件固定为 `LF`
+- 只有 `*.bat` / `*.cmd` / `*.ps1` 这类 Windows 脚本在需要时保留 `CRLF`
+
+这样做的主要目的，是在这台机器 `core.autocrlf=true` 的前提下，尽量减少：
+
+- `LF will be replaced by CRLF the next time Git touches it`
+
+这类 Git 警告。
+
 如果你后续编辑 Markdown，建议保留这个约束，不要再改回无 BOM UTF-8；  
 如果是 workflow、json、csproj 这类配置文件，也不建议因为“看起来统一”就全部改成 BOM。
 如果你在某些 PowerShell / 终端里看到中文乱码，这通常是**终端编码显示问题**，不一定是文件内容损坏。

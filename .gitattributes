@@ -1,0 +1,28 @@
+* text=auto
+
+# Keep source, docs, and config files on LF in both the repository and working tree.
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# Windows-native scripts should keep CRLF when present.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Common binary formats.
+*.dll binary
+*.exe binary
+*.gif binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.pdb binary
+*.zip binary
