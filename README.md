@@ -1,4 +1,4 @@
-# WondrousTailsSolver
+﻿# WondrousTailsSolver
 
 > 天书概率助手 / Inline Wondrous Tails probability helper for Dalamud.
 

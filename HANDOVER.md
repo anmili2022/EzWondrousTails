@@ -1,4 +1,4 @@
-# WondrousTailsSolver Handover
+﻿# WondrousTailsSolver Handover
 
 更新日期：2026-05-10
 
@@ -397,7 +397,24 @@ git -c tag.gpgSign=false tag v3.2.2.11
 
 ### 9.3 文档编码与终端乱码
 
-仓库内的 `README.md` 与 `HANDOVER.md` 应按 **UTF-8** 维护。  
+仓库内的中文 Markdown 目前统一按 **UTF-8 with BOM** 维护。  
+这样做的主要原因是：在这台机器的 Windows PowerShell 环境里，`Get-Content` 直接读取**无 BOM 的 UTF-8 Markdown** 时，中文容易显示成乱码。
+
+截至 **2026-05-10**，下面这些文件已经统一转成 UTF-8 with BOM：
+
+- `README.md`
+- `HANDOVER.md`
+- `md/2026-05-03-天书概率助手修复记录.md`
+
+同时，仓库根目录 `.editorconfig` 已增加：
+
+```text
+[*.md]
+charset = utf-8-bom
+end_of_line = lf
+```
+
+如果你后续编辑 Markdown，建议保留这个约束，不要再改回无 BOM UTF-8。  
 如果你在某些 PowerShell / 终端里看到中文乱码，这通常是**终端编码显示问题**，不一定是文件内容损坏。
 
 建议优先用下面几种方式确认：
