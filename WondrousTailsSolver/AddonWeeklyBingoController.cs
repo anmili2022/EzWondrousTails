@@ -15,13 +15,21 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
     private const string AddonName = "WeeklyBingo";
     private const string InstructionOriginalSegment = "\u7A7A\u767D\u5904\u8D34\u4E0A\u5370\u82B1";
     private const string InstructionReplacementSegment = "\u7A7A\u767D\u5904\u8D34\u4E0A\u5370\u82B111111111111111111";
-    private const string ProbabilityPrefix = "\u8FDE\u7EBF\u6982\u7387\uFF1A";
-    private const string AveragePrefix = "\u91CD\u6392\u5E73\u5747\uFF1A";
+    private const string StoryLineSegment = "\u6545\u4E8B\u7EBF";
+    private const string StoryLineInstructionSegment = "\u5370\u82B1\u8D34\u51FA";
+    private const string RewardNpcSegment = "\u5E2D\u6D1B\u00B7\u963F\u91CC\u4E9A\u73C0";
+    private const string RemainingSpaceSegment = "\u5C1A\u6709\u53EF\u8D34\u7A7A\u95F4";
+    private const string AllStickersSegment = "\u8D34\u5B8C9\u4E2A\u5370\u82B1";
+    private const string ProbabilityPrefix = "\u6982\u7387\uFF1A";
+    private const string AveragePrefix = "\u91CD\u6392\uFF1A";
+    private const string LegacyProbabilityPrefix = "\u8FDE\u7EBF\u6982\u7387\uFF1A";
+    private const string LegacyAveragePrefix = "\u91CD\u6392\u5E73\u5747\uFF1A";
 
     private uint instructionTextNodeId;
     private string? instructionOriginalText;
     private ushort instructionOriginalHeight;
     private TextFlags instructionOriginalFlags;
+    private bool hasInstructionLayout;
     private bool disposed;
 
     public AddonWeeklyBingoController(IDalamudPluginInterface pluginInterface) {
@@ -87,33 +95,24 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
             return;
         }
 
-        var baseText = instructionOriginalText ?? NormalizeInstructionText(currentText);
-        if (!baseText.Contains(InstructionOriginalSegment, StringComparison.Ordinal)) {
+        var baseText = NormalizeInstructionText(currentText);
+        if (!LooksLikeInstructionText(baseText)) {
             return;
         }
 
-        instructionOriginalText = baseText;
-
-        if (instructionOriginalHeight == 0) {
-            instructionOriginalHeight = instructionNode->GetHeight();
-        }
-
-        if (instructionOriginalFlags == 0) {
-            instructionOriginalFlags = (TextFlags)instructionNode->TextFlags;
-        }
+        CaptureInstructionState(instructionNode, currentText, baseText);
 
         instructionNode->TextFlags |= TextFlags.MultiLine;
 
-        var lineSpacing = instructionNode->LineSpacing > 0 ? instructionNode->LineSpacing : (byte)16;
-        var desiredHeight = (ushort)(instructionOriginalHeight + (lineSpacing * 2));
-        if (instructionNode->GetHeight() < desiredHeight) {
+        var (probabilityLine, averageLine) = System.PerfectTails.GetInlineDisplayLines();
+        var replacedText = BuildInstructionDisplayText(baseText, probabilityLine, averageLine);
+        var desiredHeight = GetDesiredInstructionHeight(baseText, replacedText, instructionNode->LineSpacing);
+        if (desiredHeight > 0 && instructionNode->GetHeight() != desiredHeight) {
             instructionNode->SetHeight(desiredHeight);
         }
 
-        var (probabilityLine, averageLine) = System.PerfectTails.GetInlineDisplayLines();
-        var replacedText = BuildInstructionDisplayText(baseText, probabilityLine, averageLine);
         if (!string.Equals(replacedText, currentText, StringComparison.Ordinal)) {
-            instructionNode->SetText(replacedText);
+            instructionNode->SetText(BuildInstructionDisplayBytes(baseText));
         }
     }
 
@@ -143,12 +142,13 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
         instructionOriginalText = null;
         instructionOriginalHeight = 0;
         instructionOriginalFlags = 0;
+        hasInstructionLayout = false;
     }
 
     private AtkTextNode* GetInstructionTextNode(AddonWeeklyBingo* addon) {
         if (instructionTextNodeId != 0) {
             var cachedNode = addon->GetTextNodeById(instructionTextNodeId);
-            if (IsInstructionNode(cachedNode)) {
+            if (cachedNode is not null) {
                 return cachedNode;
             }
         }
@@ -175,30 +175,100 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
         var lines = normalized
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .Where(line => !line.StartsWith(ProbabilityPrefix, StringComparison.Ordinal)
-                        && !line.StartsWith(AveragePrefix, StringComparison.Ordinal))
+                        && !line.StartsWith(AveragePrefix, StringComparison.Ordinal)
+                        && !line.StartsWith(LegacyProbabilityPrefix, StringComparison.Ordinal)
+                        && !line.StartsWith(LegacyAveragePrefix, StringComparison.Ordinal))
             .ToArray();
 
         return string.Join("\r", lines);
     }
 
     private static string BuildInstructionDisplayText(string baseText, string probabilityLine, string averageLine) {
+        var originalLines = baseText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
         var lines = new List<string>();
-        var inserted = false;
 
-        foreach (var line in baseText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)) {
-            if (!inserted && line.Contains(InstructionOriginalSegment, StringComparison.Ordinal)) {
-                lines.Add(line.TrimEnd('\u3002', ' '));
-                lines.Add(string.Empty);
-                lines.Add(probabilityLine);
-                lines.Add(averageLine);
-                inserted = true;
-                continue;
-            }
+        if (originalLines.Length == 0) {
+            lines.Add(probabilityLine);
+            lines.Add(averageLine);
+            return string.Join("\r", lines);
+        }
 
+        foreach (var line in originalLines) {
             lines.Add(line);
         }
 
+        lines.Add(probabilityLine);
+        lines.Add(averageLine);
+
         return string.Join("\r", lines);
+    }
+
+    private static byte[] BuildInstructionDisplayBytes(string baseText) {
+        var originalLines = baseText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        var builder = new SeStringBuilder();
+
+        for (var index = 0; index < originalLines.Length; index++) {
+            if (index > 0) {
+                builder.AddText("\r");
+            }
+
+            builder.AddText(originalLines[index]);
+        }
+
+        if (originalLines.Length > 0) {
+            builder.AddText("\r");
+        }
+
+        builder.Append(System.PerfectTails.GetInlineDisplaySeString());
+        return builder.Encode();
+    }
+
+    private void CaptureInstructionState(AtkTextNode* instructionNode, string currentText, string baseText) {
+        if (ContainsInjectedLines(currentText)
+            && hasInstructionLayout
+            && string.Equals(instructionOriginalText, baseText, StringComparison.Ordinal)) {
+            return;
+        }
+
+        instructionOriginalText = baseText;
+        instructionOriginalHeight = instructionNode->GetHeight();
+        instructionOriginalFlags = (TextFlags)instructionNode->TextFlags;
+        hasInstructionLayout = true;
+    }
+
+    private ushort GetDesiredInstructionHeight(string baseText, string displayText, byte lineSpacing) {
+        if (!hasInstructionLayout || instructionOriginalHeight == 0) {
+            return 0;
+        }
+
+        var baseLineCount = CountDisplayLines(baseText);
+        var displayLineCount = CountDisplayLines(displayText);
+        var extraLineCount = Math.Max(0, displayLineCount - baseLineCount);
+        var effectiveLineSpacing = lineSpacing > 0 ? lineSpacing : (byte)16;
+        return (ushort)(instructionOriginalHeight + (effectiveLineSpacing * extraLineCount));
+    }
+
+    private static int CountDisplayLines(string text)
+        => Math.Max(1, text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).Length);
+
+    private static bool ContainsInjectedLines(string text)
+        => text.Contains(ProbabilityPrefix, StringComparison.Ordinal)
+           || text.Contains(AveragePrefix, StringComparison.Ordinal)
+           || text.Contains(LegacyProbabilityPrefix, StringComparison.Ordinal)
+           || text.Contains(LegacyAveragePrefix, StringComparison.Ordinal);
+
+    private static bool LooksLikeInstructionText(string text) {
+        if (string.IsNullOrWhiteSpace(text)) {
+            return false;
+        }
+
+        var normalized = text.Replace(InstructionReplacementSegment, InstructionOriginalSegment, StringComparison.Ordinal);
+        return normalized.Contains(InstructionOriginalSegment, StringComparison.Ordinal)
+               || normalized.Contains(RewardNpcSegment, StringComparison.Ordinal)
+               || normalized.Contains(RemainingSpaceSegment, StringComparison.Ordinal)
+               || normalized.Contains(AllStickersSegment, StringComparison.Ordinal)
+               || (normalized.Contains(StoryLineInstructionSegment, StringComparison.Ordinal)
+                   && normalized.Contains(StoryLineSegment, StringComparison.Ordinal));
     }
 
     private static bool IsInstructionNode(AtkTextNode* node) {
@@ -207,10 +277,8 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
         }
 
         var text = SeString.Parse(node->NodeText).TextValue;
-        return text.Contains(InstructionOriginalSegment, StringComparison.Ordinal)
-               || text.Contains(InstructionReplacementSegment, StringComparison.Ordinal)
-               || text.Contains(ProbabilityPrefix, StringComparison.Ordinal)
-               || text.Contains(AveragePrefix, StringComparison.Ordinal);
+        return LooksLikeInstructionText(text)
+               || ContainsInjectedLines(text);
     }
 
     private static AddonWeeklyBingo* GetOpenAddon() {

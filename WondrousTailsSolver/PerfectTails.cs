@@ -154,6 +154,8 @@ public sealed partial class PerfectTails {
 /// </summary>
 public sealed unsafe partial class PerfectTails {
     private static readonly string[] ProbabilityLabels = ["1\u7EBF", "2\u7EBF", "3\u7EBF"];
+    private const ushort InlineHighProbabilityColor = 67;
+    private const ushort InlineLowProbabilityColor = 561;
 
     public void RefreshGameState() {
         for (var index = 0; index < 16; index++) {
@@ -225,25 +227,78 @@ public sealed unsafe partial class PerfectTails {
     private string[] StringFormatDoubles(IEnumerable<double> values)
         => values.Select(v => $"{v * 100:F2}%").ToArray();
 
+    public SeString GetInlineDisplaySeString() {
+        var stickersPlaced = PlayerState.Instance()->WeeklyBingoNumPlacedStickers;
+        var values = Solve(GameState);
+        var builder = new SeStringBuilder();
+
+        if (values == Error) {
+            return builder
+                .AddText("\u6982\u7387\uFF1A")
+                .AddUiForeground("\u8BFB\u53D6\u5931\u8D25", 704)
+                .AddText("\r\u91CD\u6392\uFF1A-")
+                .Build();
+        }
+
+        AppendInlineDisplayLine(builder, "\u6982\u7387\uFF1A", values);
+
+        if (stickersPlaced is > 0 and <= 7) {
+            builder.AddText("\r");
+            AppendInlineDisplayLine(builder, "\u91CD\u6392\uFF1A", GetSample(stickersPlaced));
+        }
+        else {
+            builder.AddText("\r\u91CD\u6392\uFF1A-");
+        }
+
+        return builder.Build();
+    }
+
     public (string ProbabilityLine, string AverageLine) GetInlineDisplayLines() {
         var stickersPlaced = PlayerState.Instance()->WeeklyBingoNumPlacedStickers;
         var values = Solve(GameState);
 
         if (values == Error) {
-            return ("\u8FDE\u7EBF\u6982\u7387\uFF1A\u8BFB\u53D6\u5931\u8D25", "\u91CD\u6392\u5E73\u5747\uFF1A-");
+            return ("\u6982\u7387\uFF1A\u8BFB\u53D6\u5931\u8D25", "\u91CD\u6392\uFF1A-");
         }
 
-        var valuePayloads = StringFormatDoubles(values);
-        var probabilityLine = "\u8FDE\u7EBF\u6982\u7387\uFF1A" + string.Join("  ", valuePayloads.Select((value, index) => $"{ProbabilityLabels[index]} {value}"));
+        var probabilityLine = BuildInlineDisplayLine("\u6982\u7387\uFF1A", values);
 
         if (stickersPlaced is > 0 and <= 7) {
             var samples = GetSample(stickersPlaced);
-            var samplePayloads = StringFormatDoubles(samples);
-            var averageLine = "\u91CD\u6392\u5E73\u5747\uFF1A" + string.Join("  ", samplePayloads.Select((value, index) => $"{ProbabilityLabels[index]} {value}"));
+            var averageLine = BuildInlineDisplayLine("\u91CD\u6392\uFF1A", samples);
             return (probabilityLine, averageLine);
         }
 
-        return (probabilityLine, "\u91CD\u6392\u5E73\u5747\uFF1A-");
+        return (probabilityLine, "\u91CD\u6392\uFF1A-");
+    }
+
+    private static string BuildInlineDisplayLine(string prefix, IEnumerable<double> values)
+        => prefix + string.Join(" ", values.Select((value, index) => $"{index + 1}:{value * 100:F2}%"));
+
+    private static void AppendInlineDisplayLine(SeStringBuilder builder, string prefix, IReadOnlyList<double> values) {
+        builder.AddText(prefix);
+        for (var index = 0; index < values.Count; index++) {
+            if (index > 0) {
+                builder.AddText(" ");
+            }
+
+            AddInlineValueToken(builder, index + 1, values[index]);
+        }
+    }
+
+    private static void AddInlineValueToken(SeStringBuilder builder, int number, double value) {
+        var token = $"{number}:{value * 100:F2}%";
+        if (value > 0.5) {
+            builder.AddUiForeground(token, InlineHighProbabilityColor);
+            return;
+        }
+
+        if (value < 0.3) {
+            builder.AddUiForeground(token, InlineLowProbabilityColor);
+            return;
+        }
+
+        builder.AddText(token);
     }
 
     public string GetProbabilityText()
