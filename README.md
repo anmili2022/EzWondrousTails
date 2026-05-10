@@ -6,5 +6,6 @@ A Dalamud plugin that adds row probabilities to the Wondrous Tails display.
 
 ## Maintenance
 
-Maintainer handover, build notes, and release steps: [HANDOVER.md](HANDOVER.md)
+- Maintainer handover / 维护交接： [HANDOVER.md](HANDOVER.md)
+- Build notes, release steps, and maintenance tips are kept in the handover document.
 
