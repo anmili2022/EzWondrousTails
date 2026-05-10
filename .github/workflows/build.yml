@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     env:
       DALAMUD_HOME: ${{ github.workspace }}\dalamud
       PROJECT_PATH: WondrousTailsSolver\WondrousTailsSolver.csproj
@@ -24,10 +24,10 @@ jobs:
       PACKAGE_NAME: WondrousTailsSolver
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
@@ -68,7 +68,7 @@ jobs:
           "package_dir=$($assetDir.FullName)" >> $env:GITHUB_OUTPUT
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.PACKAGE_NAME }}-build
           path: |

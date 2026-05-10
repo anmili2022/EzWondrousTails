@@ -185,6 +185,29 @@ WondrousTailsSolver\output\WondrousTailsSolver.dll
 
 当前它会在 `main` 分支的 `push` 与 `pull_request` 上运行，用来尽早发现构建问题。
 
+### 7.1 当前 workflow 维护状态
+
+截至 **2026-05-10**，仓库里的 GitHub Actions 已做过一轮兼容性整理，主要是为了降低后续告警与环境漂移带来的维护成本：
+
+- `actions/checkout@v6`
+- `actions/setup-dotnet@v5`
+- `actions/upload-artifact@v6`
+- `softprops/action-gh-release@v3`
+
+同时，Windows runner 目前显式使用：
+
+```text
+windows-2025-vs2026
+```
+
+这样做的原因是：当时 GitHub 托管 Windows 任务已经在把 `windows-2025` 请求重定向到这个镜像，显式写出后更容易看清实际运行环境，也能减少 runner 重定向提示。
+
+如果后续 GitHub 再调整托管镜像策略，可以优先复查：
+
+- 是否仍需要显式写 `windows-2025-vs2026`
+- `windows-latest` / `windows-2025` 是否已经恢复为更合适的选择
+- Actions major 版本是否还有新的兼容性升级
+
 工作流文件：
 
 ```text
@@ -327,6 +350,7 @@ git -c tag.gpgSign=false tag v3.2.2.11
 
 - 直接在编辑器里打开文件
 - 在 GitHub 网页上查看渲染结果
+- 先确认显示链路，再决定要不要改文件编码
 - 必要时用 Python 明确按 UTF-8 读取，例如：
 
 ```powershell

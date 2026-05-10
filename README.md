@@ -1,32 +1,33 @@
 # WondrousTailsSolver
 
-> 天书概率助手 / A Dalamud plugin that shows Wondrous Tails row probabilities inline.
+> 天书概率助手 / Inline Wondrous Tails probability helper for Dalamud.
 
-`WondrousTailsSolver` 会在最终幻想 XIV 的天书界面（`Wondrous Tails` / `WeeklyBingo`）中实时显示 1 线、2 线、3 线概率，并提供重排（Shuffle）后的平均参考概率。  
-This plugin adds real-time 1-line / 2-line / 3-line probabilities to the in-game Wondrous Tails display and also shows the average outcome after shuffle.
+`WondrousTailsSolver` 会在最终幻想 XIV 的天书界面（`Wondrous Tails` / `WeeklyBingo`）中，直接把 1 线、2 线、3 线概率显示在原说明文字附近，并提供重排（Shuffle）后的平均参考概率。
+
+`WondrousTailsSolver` adds inline 1-line / 2-line / 3-line probabilities to the in-game Wondrous Tails window and also shows average reference odds after shuffle.
 
 ![math](https://github.com/user-attachments/assets/d4e00d8a-d3e9-4638-839a-2d93eb0ae928)
 
 ## Features / 功能
 
-- 在天书界面内直接显示当前 1 线 / 2 线 / 3 线概率  
-  Show current 1-line / 2-line / 3-line probabilities directly in the Wondrous Tails window
-- 显示重排（Shuffle）后的平均参考概率  
-  Show average reference probabilities after shuffle
-- 概率文本追加在原说明文字末尾，减少额外占位  
-  Append probability text to the end of the original instruction text to reduce UI clutter
-- 提供颜色提示，便于快速判断  
-  Provide color cues for quick reading
+- 在天书界面内直接显示当前 1 线 / 2 线 / 3 线概率
+  - Show current 1-line / 2-line / 3-line probabilities directly in the Wondrous Tails window
+- 显示重排（Shuffle）后的平均参考概率
+  - Show average reference probabilities after shuffle
+- 把概率信息追加到原说明文字末尾，尽量减少界面占位
+  - Append probability details to the end of the original instruction text to keep the UI compact
+- 用颜色帮助快速判断结果好坏
+  - Use color cues for faster reading
   - `> 50%`：绿色 / Green
   - `< 30%`：红色 / Red
 
 ## Download / 下载
 
-- 最新发布页 / Latest release:  
+- 最新发布页 / Latest release:
   https://github.com/anmili2022/EzWondrousTails/releases/latest
 - 主要文件 / Main assets:
-  - `latest.zip`：插件发布包 / plugin release package
-  - `WondrousTailsSolver.json`：仓库清单 / repository-feed manifest
+  - `latest.zip`：插件发布包，可直接用于安装或更新 / plugin release package for direct install or update
+  - `WondrousTailsSolver.json`：插件源清单文件 / manifest file for plugin feeds
 
 ## Build / 构建
 
@@ -47,7 +48,8 @@ dotnet build .\WondrousTailsSolver.sln -c Release
 - GitHub Releases: https://github.com/anmili2022/EzWondrousTails/releases
 - Dalamud API 文档 / Docs: https://dalamud.dev/api/
 
-更详细的构建说明、发版流程和维护注意事项请查看 `HANDOVER.md`。  
+更详细的构建说明、发版流程和维护注意事项请查看 `HANDOVER.md`。
+
 For detailed build notes, release steps, and maintenance guidance, see `HANDOVER.md`.
 
 ## Credits / 致谢
