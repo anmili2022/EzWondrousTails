@@ -13,6 +13,8 @@ namespace WondrousTailsSolver;
 
 public unsafe class AddonWeeklyBingoController : IDisposable {
     private const string AddonName = "WeeklyBingo";
+    private const string BlankSpaceSegment = "\u7A7A\u767D\u5904";
+    private const string PutStickerSegment = "\u8D34\u4E0A\u5370\u82B1";
     private const string InstructionOriginalSegment = "\u7A7A\u767D\u5904\u8D34\u4E0A\u5370\u82B1";
     private const string InstructionReplacementSegment = "\u7A7A\u767D\u5904\u8D34\u4E0A\u5370\u82B111111111111111111";
     private const string StoryLineSegment = "\u6545\u4E8B\u7EBF";
@@ -264,6 +266,8 @@ public unsafe class AddonWeeklyBingoController : IDisposable {
 
         var normalized = text.Replace(InstructionReplacementSegment, InstructionOriginalSegment, StringComparison.Ordinal);
         return normalized.Contains(InstructionOriginalSegment, StringComparison.Ordinal)
+               || (normalized.Contains(BlankSpaceSegment, StringComparison.Ordinal)
+                   && normalized.Contains(PutStickerSegment, StringComparison.Ordinal))
                || normalized.Contains(RewardNpcSegment, StringComparison.Ordinal)
                || normalized.Contains(RemainingSpaceSegment, StringComparison.Ordinal)
                || normalized.Contains(AllStickersSegment, StringComparison.Ordinal)
